@@ -25,7 +25,7 @@ class NetworkRecorder {
     this._records = recordArray;
     this._rawEvents = rawEventsArray;
 
-    this.networkManager = NetworkManager.createWithFakeTarget();
+    this.networkManager = WebInspector.targetManager.mainTarget().networkManager; // NetworkManager.createWithFakeTarget();
 
     // TODO(bckenny): loadingFailed calls are not recorded in REQUEST_FINISHED.
     this.networkManager.addEventListener(REQUEST_FINISHED, request => {
