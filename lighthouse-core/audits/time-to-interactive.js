@@ -1,24 +1,15 @@
 /**
  * @license
  * Copyright 2016 Google Inc. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
 'use strict';
 
-const Audit = require('../audit');
-const TracingProcessor = require('../../lib/traces/tracing-processor');
+const Audit = require('./audit');
+const TracingProcessor = require('../lib/traces/tracing-processor');
 const FMPMetric = require('./first-meaningful-paint');
 
 class TTIMetric extends Audit {
@@ -30,7 +21,7 @@ class TTIMetric extends Audit {
       category: 'Performance',
       name: 'time-to-interactive',
       description: 'Time To Interactive',
-      optimalValue: 'undefined so far',  // SCORING_POINT_OF_DIMINISHING_RETURNS.toLocaleString()
+      optimalValue: '<50ms at the 90% percentile',
       requiredArtifacts: ['traceContents', 'speedline']
     };
   }
@@ -55,7 +46,7 @@ class TTIMetric extends Audit {
    *     No risk of DCL event handlers changing the page
    *     No surprises of inactive buttons/actions as DOM element event handlers should be bound
    *   - The main thread is available enough to handle user input
-   *     First 500ms window when Risk to Responsiveness is < 25%.
+   *     first 500ms window where Est Input Latency is <50ms at the 90% percentile.
    * @param {!Artifacts} artifacts The artifacts from the gather phase.
    * @return {!AuditResult} The score from the audit, ranging from 0-100.
    */
@@ -68,7 +59,7 @@ class TTIMetric extends Audit {
       // todo DCLEnded
 
       // look at speedline results for 85% starting at FMP
-      //const visualProgress = artifacts.speedline;
+      // const visualProgress = artifacts.Speedline;
       // debugger;
 
       // TODO: Consider UA loading indicator
@@ -78,34 +69,39 @@ class TTIMetric extends Audit {
       const endOfTraceTime = model.bounds.max;
 
       // Find first 500ms window where Est Input Latency is <50ms at the 90% percentile.
-      let startTime = fMP; // Math.max(fMP, visualProgress);
-      let endTime = startTime + 500;
+      let startTime = parseFloat(fMP) - 50; // Math.max(fMP, visualProgress);
+      let endTime;
+      let currentLatency = Infinity;
       const percentile = 0.9;
       const threshold = 50;
+      let foundLatencies = [];
 
-      (function testWindow() {
-        if (endTime > endOfTraceTime) return; // TODO return an error instead
-        let pass = TTIMetric.isLatencySatisfactory(startTime, endTime, percentile, threshold, artifacts, model);
-        if (pass) return;
-        // if it didn't pass, increment just 50ms and try again.
+      while (currentLatency > threshold) {
+        // While latency is too high, increment just 50ms and look again.
         startTime += 50;
         endTime = startTime + 500;
-        testWindow();
-      })();
+        // If there's no more room in the trace to look, we're done.
+        if (endTime > endOfTraceTime) {
+          // TODO return an error instead
+          return;
+        }
+        // Get our expected latency for the time window
+        const latencies = TracingProcessor.getRiskToResponsiveness(
+          model, artifacts.traceContents, startTime, endTime);
+        const estLatency = latencies.find(res => res.percentile === percentile);
+        foundLatencies.push(Object.assign({}, estLatency, {startTime}));
+        console.log('At', startTime, '90 percentile est latency is ~', estLatency.time);
+        // If the expected latency is low enough, we have our TTI
+        currentLatency = estLatency.time;
+      }
 
       return TTIMetric.generateAuditResult({
         value: startTime,
         rawValue: startTime,
-        optimalValue: this.meta.optimalValue
+        optimalValue: this.meta.optimalValue,
+        extendedInfo: foundLatencies
       });
     });
-  }
-
-  static isLatencySatisfactory(startTime, endTime, percentile, threshold, artifacts, model) {
-    let readiness = TracingProcessor.getRiskToResponsiveness(
-      artifacts.traceContents, startTime, endTime, model);
-    const estLatency = readiness.find(res => res.percentile === percentile).result.time;
-    return estLatency <= threshold;
   }
 }
 

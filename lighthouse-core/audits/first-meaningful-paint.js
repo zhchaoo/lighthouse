@@ -127,7 +127,7 @@ class FirstMeaningfulPaint extends Audit {
     score = Math.max(0, score);
 
     return {
-      duration: `${firstMeaningfulPaint.toFixed(1)}ms`,
+      duration: firstMeaningfulPaint, // `${.toFixed(1)}ms`,
       score: Math.round(score),
       extendedInfo: {timings}
     };
