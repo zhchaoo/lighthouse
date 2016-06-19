@@ -53,29 +53,40 @@ class TTIMetric extends Audit {
   static audit(artifacts) {
 
     // Max(FMPMetric, DCLEnded, visProgress[0.85]) is where we begin looking
-    FMPMetric.audit(artifacts).then(result => {
-      const fMP = result.rawValue;
+    FMPMetric.audit(artifacts).then(fmpResult => {
+      const fmpTiming = fmpResult.rawValue;
+      const timings = fmpResult.extendedInfo.timings;
 
-      // todo DCLEnded
-
-      // look at speedline results for 85% starting at FMP
-      // const visualProgress = artifacts.Speedline;
-      // debugger;
-
-      // TODO: Consider UA loading indicator
-
+      // process the trace
       const tracingProcessor = new TracingProcessor();
       const model = tracingProcessor.init(artifacts.traceContents);
       const endOfTraceTime = model.bounds.max;
 
+      // todo DCLEnded
+      // TODO: Consider UA loading indicator
+
+      // look at speedline results for 85% starting at FMP
+      const visualProgress = artifacts.Speedline.frames.map(frame => {
+        return {
+          progress: frame.getProgress(),
+          time: frame.getTimeStamp()
+        };
+      });
+      const fMPts = timings.fMPfull + timings.navStart;
+      const visuallyReady = visualProgress.find(frame => {
+        return frame.time >= fMPts && frame.progress >= 85;
+      });
+      const visuallyReadyTiming = visuallyReady.time - timings.navStart;
+
       // Find first 500ms window where Est Input Latency is <50ms at the 90% percentile.
-      let startTime = parseFloat(fMP) - 50; // Math.max(fMP, visualProgress);
+      let startTime = Math.max(fmpTiming, visuallyReadyTiming) - 50;
       let endTime;
       let currentLatency = Infinity;
       const percentile = 0.9;
       const threshold = 50;
       let foundLatencies = [];
 
+      // When we've found a latency that's good enough, we're good.
       while (currentLatency > threshold) {
         // While latency is too high, increment just 50ms and look again.
         startTime += 50;
@@ -91,15 +102,26 @@ class TTIMetric extends Audit {
         const estLatency = latencies.find(res => res.percentile === percentile);
         foundLatencies.push(Object.assign({}, estLatency, {startTime}));
         console.log('At', startTime, '90 percentile est latency is ~', estLatency.time);
-        // If the expected latency is low enough, we have our TTI
+        // Grab this latency and try the threshold again
         currentLatency = estLatency.time;
       }
+
+      const extendedInfo = {
+        timings: {
+          fMP: fmpTiming,
+          visuallyReady: visuallyReadyTiming,
+          mainThreadAvail: startTime
+        },
+        expectedLatencyAtTTI: currentLatency,
+        foundLatencies
+      };
+      console.log('exendedInfo', extendedInfo);
 
       return TTIMetric.generateAuditResult({
         value: startTime,
         rawValue: startTime,
         optimalValue: this.meta.optimalValue,
-        extendedInfo: foundLatencies
+        extendedInfo
       });
     });
   }
