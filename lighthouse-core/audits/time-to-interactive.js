@@ -62,7 +62,14 @@ class TTIMetric extends Audit {
       const model = tracingProcessor.init(artifacts.traceContents);
       const endOfTraceTime = model.bounds.max;
 
-      // todo DCLEnded
+      // todo This currently doesnt work, so yeah....
+      const refEvent = TracingProcessor._findReferenceEvent(artifacts.traceContents);
+      const mainThread = TracingProcessor._findMainThreadFromIds(model, refEvent.pid, refEvent.tid);
+      const evts = TracingProcessor._filterSlicesInSameFrame(mainThread.sliceGroup.slices, refEvent, e => {
+        return e.title === 'domContentLoadedEventEnd';
+      });
+      debugger;
+
       // TODO: Consider UA loading indicator
 
       // look at speedline results for 85% starting at FMP

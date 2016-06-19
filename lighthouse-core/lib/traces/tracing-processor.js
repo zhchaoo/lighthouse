@@ -119,6 +119,32 @@ class TraceProcessor {
   }
 
   /**
+   * Find the event that's in the main frame and the main thread
+   * @param {!Array} traceContents
+   */
+  static _findReferenceEvent(traceContents) {
+    const startEvent = traceContents.find(event => {
+      return event.name === 'TracingStartedInPage';
+    });
+    return startEvent;
+  }
+
+
+  /**
+   * Find the event that's in the main frame and the main thread
+   */
+  static _filterSlicesInSameFrame(slices, refEvent, predicate) {
+    function getFrame(e) {
+      return e.args.data && (e.args.data.page || e.args.frame);
+    }
+
+    const refFrame = getFrame(refEvent);
+    return slices.filter(s => {
+      return getFrame(s) === refFrame && predicate(s);
+    });
+  }
+
+  /**
    * Calculate duration at specified percentiles for given population of
    * durations.
    * @param {!Array<number>} durations Array of durations, sorted in ascending order.
@@ -179,10 +205,8 @@ class TraceProcessor {
     const totalTime = endTime - startTime;
 
     // Find the main thread.
-    const startEvent = trace.find(event => {
-      return event.name === 'TracingStartedInPage';
-    });
-    const mainThread = TraceProcessor._findMainThreadFromIds(model, startEvent.pid, startEvent.tid);
+    const refEvent = TraceProcessor._findReferenceEvent(trace);
+    const mainThread = TraceProcessor._findMainThreadFromIds(model, refEvent.pid, refEvent.tid);
 
     // Find durations of all slices in range of interest.
     // TODO(bckenny): filter for top level slices ourselves?
