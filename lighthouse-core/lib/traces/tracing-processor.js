@@ -135,7 +135,7 @@ class TraceProcessor {
    */
   static _filterSlicesInSameFrame(slices, refEvent, predicate) {
     function getFrame(e) {
-      return e.args.data && (e.args.data.page || e.args.frame);
+      return e.args.frame || (e.args.data && e.args.data.page);
     }
 
     const refFrame = getFrame(refEvent);
