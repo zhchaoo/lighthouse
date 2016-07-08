@@ -18,7 +18,7 @@
     "coveralls": "npm run coverage && cat ./coverage/lcov.info | coveralls",
     "start": "node ./lighthouse-cli/index.js",
     "test": "npm run lint --silent && npm run unit && npm run closure",
-    "cli-unit": "mocha $(find lighthouse-cli/test -name '*.js') --timeout 60000 --harmony",
+    "cli-unit": "mocha $(find lighthouse-cli/test -name '*.js') --timeout 60000 --harmony_spreadcalls --harmony_spread_arrays",
     "unit": "npm run cli-unit && npm --prefix ./lighthouse-core run unit",
     "closure": "npm --prefix ./lighthouse-core run closure",
     "watch": "npm --prefix ./lighthouse-core run watch",
