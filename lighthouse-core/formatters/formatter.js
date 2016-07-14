@@ -44,7 +44,8 @@ class Formatter {
       estimatedInputLatency: require('./estimated-input-latency'),
       null: require('./null-formatter'),
       speedline: require('./speedline-formatter'),
-      userTimings: require('./user-timings')
+      userTimings: require('./user-timings'),
+      mediaSized: require('./media-sized')
     };
   }
 

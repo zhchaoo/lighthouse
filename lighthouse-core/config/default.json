@@ -16,7 +16,8 @@
       "critical-request-chains",
       "speedline",
       "content-width",
-      "cache-contents"
+      "cache-contents",
+      "media-sized"
     ]
   },
   {
@@ -65,7 +66,8 @@
     "label",
     "tabindex",
     "content-width",
-    "cache-start-url"
+    "cache-start-url",
+    "media-sized"
   ],
 
   "aggregations": [{
@@ -269,6 +271,10 @@
           "weight": 1
         },
         "manifest-display": {
+          "rawValue": true,
+          "weight": 1
+        },
+        "media-sized": {
           "rawValue": true,
           "weight": 1
         },

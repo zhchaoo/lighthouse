@@ -1,0 +1,17 @@
+<style>
+.size-violation {
+  color: #D0021B;
+}
+</style>
+<div class="size-violation">
+  <details>
+    <summary>
+      Elements should have dimensions specified to avoid layout
+    </summary>
+    <ul>
+    {{#each this}}
+      <li><code>{{ this }}</code></li>
+    {{/each}}
+    </ul>
+  </details>
+</div>
