@@ -24,16 +24,23 @@ class NetworkRecorder extends EventEmitter {
     super();
 
     this._records = recordArray;
-    this._rawEvents = recordArray;
 
-    // this.networkManager = WebInspector.targetManager.mainTarget().networkManager;
-    this.networkManager = NetworkManager.createWithFakeTarget();
+    // branch for native devtools
+    if (WebInspector.targetManager) {
+      this.networkManager = WebInspector.targetManager.mainTarget()._connection._dispatchers.Network._dispatcher._manager;
+    } else {
+      this.networkManager = NetworkManager.createWithFakeTarget();
+    }
 
     // TODO(bckenny): loadingFailed calls are not recorded in REQUEST_FINISHED.
-    this.networkManager.addEventListener(this.EventTypes.RequestFinished, request => {
+    this.networkManager.addEventListener(WebInspector.NetworkManager.Events.RequestFinished, request => {
       this._records.push(request.data);
       this.emit('requestloaded', request.data);
     });
+
+    if (WebInspector.targetManager) {
+      return;
+    }
 
     this.onRequestWillBeSent = this.onRequestWillBeSent.bind(this);
     this.onRequestServedFromCache = this.onRequestServedFromCache.bind(this);
