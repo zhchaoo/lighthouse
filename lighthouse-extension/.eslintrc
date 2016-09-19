@@ -1,0 +1,10 @@
+{
+  "extends": "../.eslintrc",
+  "env": {
+    "browser": true
+  },
+  "globals": {
+    "chrome": true,
+    "__lighthouse": true
+  }
+}

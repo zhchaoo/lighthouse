@@ -1,24 +1,38 @@
 # lighthouse
 > Stops you crashing into the rocks; lights the way
 
-<p align="center">
-<img src="https://cloud.githubusercontent.com/assets/883126/13900813/10a62a14-edcc-11e5-8ad3-f927a592eeb0.png" height="300px">
-</p>
+![image](https://cloud.githubusercontent.com/assets/39191/15410166/30c658e2-1dcd-11e6-99da-8996be5429b6.png)
+
+![image](https://cloud.githubusercontent.com/assets/39191/15410190/502b2d52-1dcd-11e6-9d82-5de8742180bd.png)
+
 
 
 [![Build Status](https://travis-ci.org/GoogleChrome/lighthouse.svg?branch=master)](https://travis-ci.org/GoogleChrome/lighthouse)
+[![Coverage Status](https://coveralls.io/repos/github/GoogleChrome/lighthouse/badge.svg?branch=master)](https://coveralls.io/github/GoogleChrome/lighthouse?branch=master)
 
-_status: early. sorta working_
+_status: ready for use! please report any issues or questions you have_
 
-## Install
+**Lighthouse requires Chrome 52 or later**
+
+## Install Chrome extension
+
+[chrome.google.com/webstore/detail/lighthouse/blipmdconlkpinefehnmjammfjpmpbjk](https://chrome.google.com/webstore/detail/lighthouse/blipmdconlkpinefehnmjammfjpmpbjk)
+
+Quick-start guide on using the Lighthouse extension: http://bit.ly/lighthouse-quickstart
+
+## Install CLI
+
+Requires Node v5+ or Node v4 w/ `--harmony`
+
 ```sh
 npm install -g GoogleChrome/lighthouse
 ```
 
 ## Run
 ```sh
-# Start Chrome with a few flags
-npm run chrome
+# Launch Chrome by reaching into the Lighthouse module
+# and using one of its scripts.
+npm explore -g lighthouse -- npm run chrome
 
 # Kick off a lighthouse run
 lighthouse https://airhorner.com/
@@ -33,9 +47,100 @@ lighthouse --help
 ```sh
 git clone https://github.com/GoogleChrome/lighthouse
 cd lighthouse
-
 npm install
-npm link
+```
+
+#### Run
+```sh
+node lighthouse-cli http://example.com
+```
+
+## Custom run configuration
+
+You can supply your own run configuration to customize what audits you want details on. Copy the [default.json](https://github.com/GoogleChrome/lighthouse/blob/master/lighthouse-core/config/default.json) and start customizing. Then provide to the CLI with `lighthouse --config-path=myconfig.json <url>`
+
+## Trace processing
+
+Lighthouse can be used to analyze trace and performance data collected from other tools (like WebPageTest and ChromeDriver). The `traces` and `performanceLog` artifact items can be provided using a string for the absolute path on disk. The perf log is captured from the Network domain (a la ChromeDriver's [`enableNetwork` option](https://sites.google.com/a/chromium.org/chromedriver/capabilities#TOC-perfLoggingPrefs-object) and reformatted slightly. As an example, here's a trace-only run that's reporting on user timings and critical request chains:
+
+##### `config.json`
+```js
+{
+  "audits": [
+    "user-timings",
+    "critical-request-chains"
+  ],
+
+  "artifacts": {
+    "traces": {
+      "defaultPass": "/User/me/lighthouse/lighthouse-core/test/fixtures/traces/trace-user-timings.json"
+    },
+    "performanceLog": "/User/me/lighthouse/lighthouse-core/test/fixtures/traces/perflog.json"
+  },
+
+  "aggregations": [{
+    "name": "Performance Metrics",
+    "description": "These encapsulate your app's performance.",
+    "scored": false,
+    "categorizable": false,
+    "items": [{
+      "criteria": {
+        "user-timings": { "rawValue": 0, "weight": 1 },
+        "critical-request-chains": { "rawValue": 0, "weight": 1}
+      }
+    }]
+  }]
+}
+```
+
+Then, run with: `lighthouse --config-path=config.json http://www.random.url`
+
+
+## Lighthouse CLI options
+
+```sh
+$ lighthouse --help
+
+lighthouse <url>
+
+Logging:
+  --verbose  Displays verbose logging                                                 [boolean]
+  --quiet    Displays no progress or debug logs                                       [boolean]
+
+Configuration:
+  --mobile                 Emulates a Nexus 5X                                  [default: true]
+  --save-assets            Save the trace contents & screenshots to disk              [boolean]
+  --save-artifacts         Save all gathered artifacts to disk                        [boolean]
+  --list-all-audits        Prints a list of all available audits and exits            [boolean]
+  --list-trace-categories  Prints a list of all required trace categories and exits   [boolean]
+  --config-path            The path to the config JSON.
+
+Output:
+  --output       Reporter for the results
+                         [choices: "pretty", "json", "html"]                [default: "pretty"]
+  --output-path  The file path to output the results
+                 Example: --output-path=./lighthouse-results.html           [default: "stdout"]
+
+Options:
+  --help     Show help                                                                [boolean]
+  --version  Show version number                                                      [boolean]
+```
+
+## Lighthouse w/ mobile devices
+
+Lighthouse can run against a real mobile device. You can follow the [Remote Debugging on Android (Legacy Workflow)](https://developer.chrome.com/devtools/docs/remote-debugging-legacy) up through step 3.3, but the TL;DR is install & run adb, enable USB debugging, then port forward 9222 from the device to the machine with Lighthouse. 
+
+```sh
+$ adb kill-server
+
+$ adb devices -l
+* daemon not running. starting it now on port 5037 *
+* daemon started successfully *
+00a2fd8b1e631fcb       device usb:335682009X product:bullhead model:Nexus_5X device:bullhead
+
+$ adb forward tcp:9222 localabstract:chrome_devtools_remote
+
+$ lighthouse --mobile false https://mysite.com
 ```
 
 ## Tests
@@ -57,7 +162,7 @@ npm run unit
 
 ## Chrome Extension
 
-The same audits are run against from a Chrome extension. See [./extension](https://github.com/GoogleChrome/lighthouse/tree/master/extension).
+The same audits are run against from a Chrome extension. See [./extension](https://github.com/GoogleChrome/lighthouse/tree/master/lighthouse-extension).
 
 
 ## Architecture
@@ -65,13 +170,18 @@ The same audits are run against from a Chrome extension. See [./extension](https
 _Some incomplete notes_
 
 #### Components
-* **Driver** - Interfaces with Chrome Debugging Protocol
+* **Driver** - Interfaces with [Chrome Debugging Protocol](https://developer.chrome.com/devtools/docs/debugger-protocol)  ([API viewer](https://chromedevtools.github.io/debugger-protocol-viewer/))
 * **Gathers** - Requesting data from the browser (and maybe post-processing)
 * **Artifacts** - The output of gatherers
 * **Audits** - Non-performance evaluations of capabilities and issues. Includes a raw value and score of that value.
 * **Metrics** - Performance metrics summarizing the UX
 * **Diagnoses** - The perf problems that affect those metrics
 * **Aggregators** - Pulling audit results, grouping into user-facing components (eg. `install_to_homescreen`) and applying weighting and overall scoring.
+
+##### Internal module graph
+![graph of lighthouse-core module dependencies](https://cloud.githubusercontent.com/assets/39191/16702446/cd59989e-451a-11e6-97e9-6c72c301017d.png)
+<small><code>npm install -g js-vd; vd --exclude "node_modules|third_party" lighthouse-core/ > graph.html</code></small>
+
 
 ### Protocol
 
@@ -122,14 +232,28 @@ Promise.resolve({
 
 The `.eslintrc` defines all.
 
-#### Code documentation
-
 We're using [JSDoc](http://usejsdoc.org/) along with [closure annotations](https://developers.google.com/closure/compiler/docs/js-for-compiler). Annotations encouraged for all contributions.
-
-#### Variable declarations
 
 `const` > `let` > `var`.  Use `const` wherever possible. Save `var` for emergencies only.
 
 ## Trace processing
 
 The traceviewer-based trace processor from [node-big-rig](https://github.com/GoogleChrome/node-big-rig/tree/master/lib) was forked into Lighthouse. Additionally, the [DevTools' Timeline Model](https://github.com/paulirish/devtools-timeline-model) is available as well. There may be advantages for using one model over another.
+
+**To update traceviewer source:**
+
+```sh
+cd lighthouse-core
+# if not already there, clone catapult and copy license over
+git clone --depth=1 https://github.com/catapult-project/catapult.git third_party/src/catapult
+cp third_party/src/catapult/LICENSE third_party/traceviewer-js/
+# pull for latest
+git -C "./third_party/src/catapult/" pull
+# run our conversion script
+node scripts/build-traceviewer-module.js
+```
+
+
+<p align="center">
+<img src="https://cloud.githubusercontent.com/assets/883126/13900813/10a62a14-edcc-11e5-8ad3-f927a592eeb0.png" height="300px">
+</p>

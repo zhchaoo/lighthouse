@@ -1,9 +1,12 @@
-# Igore js files inside local chromium download on Travis.
-/chrome-linux/
+# Ignore js files inside local chromium download on Travis.
+**/chrome-linux/**
 
-/node_modules/
-/extension/
+**/node_modules/**
+**/third_party/**
 
-/dist/
+lighthouse-extension/dist
+lighthouse-extension/app/scripts
 
-/closure/*/*
+
+**/closure/*/*
+coverage/**

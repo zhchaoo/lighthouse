@@ -1,20 +1,55 @@
 {
   "name": "lighthouse",
-  "version": "1.0.0",
-  "description": "",
-  "bin": "./cli/index.js",
+  "version": "1.1.3",
+  "description": "Lighthouse",
+  "main": "./lighthouse-core/index.js",
+  "bin": "./lighthouse-cli/index.js",
   "engines": {
     "node": ">=5"
   },
   "scripts": {
-    "closure": "closure/closure-type-checking.js",
-    "lint": "eslint .",
+    "lint": "[ \"$CI\" = true ] && eslint --quiet . || eslint .",
+    "smoke": "lighthouse-cli/scripts/run-smoke-tests.sh",
+    "coverage": "node $__node_harmony $(npm bin)/istanbul cover -x \"**/third_party/**\" _mocha -- $(find */test -name '*-test.js') --timeout 10000 --reporter progress",
+    "coveralls": "npm run coverage && cat ./coverage/lcov.info | coveralls",
+    "start": "node ./lighthouse-cli/index.js",
     "test": "npm run lint --silent && npm run unit && npm run closure",
-    "watch": "find . -name '*.js' | grep -v 'node_modules' | grep -v 'extension' | entr npm run unit",
-    "unit": "mocha $(find ./test -name '*.js') --timeout 60000",
-    "chrome": "./scripts/launch-chrome.sh",
-    "smoke": "./scripts/run-smoke-tests.sh",
-    "start": "node cli.js"
+    "cli-unit": "lighthouse-core/scripts/run-mocha.sh --cli",
+    "unit": "lighthouse-core/scripts/run-mocha.sh --default",
+    "closure": "cd lighthouse-core && closure/closure-type-checking.js",
+    "watch": "lighthouse-core/scripts/run-mocha.sh --watch",
+    "chrome": "lighthouse-core/scripts/launch-chrome.sh"
+  },
+  "devDependencies": {
+    "coveralls": "^2.11.9",
+    "eslint-config-google": "^0.4.0",
+    "eslint": "^2.4.0",
+    "google-closure-compiler": "^20160517.0.0",
+    "gulp-replace": "^0.5.4",
+    "gulp-util": "^3.0.7",
+    "gulp": "^3.9.1",
+    "istanbul": "^0.4.3",
+    "jsdom": "^9.0.0",
+    "mkdirp": "^0.5.1",
+    "mocha": "^2.3.3",
+    "request": "^2.69.0",
+    "walk": "^2.3.9"
+  },
+  "dependencies": {
+    "axe-core": "^1.1.1",
+    "chrome-devtools-frontend": "1.0.401423",
+    "chrome-remote-interface": "^0.11.0",
+    "debug": "^2.2.0",
+    "devtools-timeline-model": "1.1.6",
+    "gl-matrix": "2.3.2",
+    "handlebars": "^4.0.5",
+    "json-stringify-safe": "^5.0.1",
+    "jszip": "2.6.0",
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.2.8",
+    "semver": ">=4.3.3",
+    "speedline": "0.2.2",
+    "yargs": "3.30.0"
   },
   "repository": "googlechrome/lighthouse",
   "keywords": [
@@ -25,30 +60,7 @@
   "author": "The Chromium Authors",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/googlechrome/big-rig/issues"
+    "url": "https://github.com/googlechrome/lighthouse/issues"
   },
-  "homepage": "https://github.com/googlechrome/big-rig#readme",
-  "dependencies": {
-    "axe-core": "^1.1.1",
-    "chrome-devtools-frontend": "1.0.381789",
-    "chrome-remote-interface": "^0.11.0",
-    "devtools-timeline-model": "1.0.19",
-    "handlebars": "^4.0.5",
-    "meow": "^3.7.0",
-    "npmlog": "^2.0.3",
-    "semver": "^5.1.0",
-    "speedline": "^0.1.2",
-    "traceviewer": "^1.0.8"
-  },
-  "devDependencies": {
-    "eslint": "^2.4.0",
-    "eslint-config-google": "^0.4.0",
-    "google-closure-compiler": "^20160315.0.0",
-    "gulp": "^3.9.1",
-    "gulp-replace": "^0.5.4",
-    "gulp-util": "^3.0.7",
-    "mocha": "^2.3.3",
-    "request": "^2.69.0",
-    "walk": "^2.3.9"
-  }
+  "homepage": "https://github.com/googlechrome/lighthouse#readme"
 }
