@@ -17,7 +17,7 @@
 'use strict';
 
 const Driver = require('./driver.js');
-const log = require('../log.js');
+const log = require('../../lib/log.js');
 
 
 /**

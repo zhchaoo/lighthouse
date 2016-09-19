@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
+# run from /lighthouse-extension
+#     ./devtools/build-for-devtools.sh
+
 browserify \
   --debug \
   --transform brfs \
   --ignore npmlog \
   --ignore chrome-remote-interface \
   --ignore chrome-devtools-frontend \
-  --exclude /Users/paulirish/code/lighthouse/src/lib/web-inspector-impl.js \
+  --exclude /Users/paulirish/code/lighthouse/lighthouse-core/lib/web-inspector-impl.js \
   devtools/devtools-lighthouse-runner.js \
   > lighthouse-lib.js
 

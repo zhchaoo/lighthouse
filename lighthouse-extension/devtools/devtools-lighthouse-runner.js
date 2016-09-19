@@ -17,15 +17,30 @@
 
 'use strict';
 
-const DevToolsProtocol = require('../../src/lib/drivers/devtools.js');
-const lighthouse = require('../../src/lighthouse');
+const DevToolsProtocol = require('../../lighthouse-core/gather/drivers/devtools.js');
+
+const Runner = require('../../lighthouse-core/runner');
+const Config = require('../../lighthouse-core/config/config');
+const defaultConfig = require('../../lighthouse-core/config/default.json');
+
 const NO_SCORE_PROVIDED = '-1';
 
 
 global.runAudits = function(options) {
   const driver = new DevToolsProtocol();
   const url = options.url;
-  return lighthouse(driver, Object.assign({}, options, {url}));
+
+    // Always start with a freshly parsed default config.
+  const runConfig = JSON.parse(JSON.stringify(defaultConfig));
+  const config = new Config(runConfig);
+  // Add url and config to fresh options object.
+  const runOptions = Object.assign({}, options, {url, config});
+
+  // Run Lighthouse.
+  return Runner.run(driver, runOptions).catch(e => {
+    console.error(e);
+    throw e;
+  });
 };
 
 function escapeHTML(str) {
