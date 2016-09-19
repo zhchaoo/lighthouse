@@ -24,9 +24,10 @@ class NetworkRecorder extends EventEmitter {
     super();
 
     this._records = recordArray;
-    this._rawEvents = rawEventsArray;
+    this._rawEvents = recordArray;
 
-    this.networkManager = WebInspector.targetManager.mainTarget().networkManager; // NetworkManager.createWithFakeTarget();
+    // this.networkManager = WebInspector.targetManager.mainTarget().networkManager;
+    this.networkManager = NetworkManager.createWithFakeTarget();
 
     // TODO(bckenny): loadingFailed calls are not recorded in REQUEST_FINISHED.
     this.networkManager.addEventListener(this.EventTypes.RequestFinished, request => {
