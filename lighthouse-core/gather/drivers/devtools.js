@@ -19,6 +19,7 @@
 const Driver = require('./driver.js');
 const log = require('../../lib/log.js');
 
+const EventEmitter = require('events').EventEmitter;
 
 /**
  * VERY MUCH WIP.
@@ -37,12 +38,17 @@ class DevToolsDriver extends Driver {
   }
 
   connect() {
-    console.info('success! tring to connect() in driver');
+    console.info('starting to connect() in driver');
     this.beginLogging();
 
-    if (WebInspector.targetManager._targets.length) {
-      Promise.resolve();
+    if (!WebInspector.targetManager.mainTarget()) {
+      Promise.reject(new Error('no target found'));
     }
+
+    this._eventEmitter = new EventEmitter();
+
+    InspectorFrontendHost.events.addEventListener(InspectorFrontendHostAPI.Events.DispatchMessage, this._dispatchMessage.bind(this), this);
+    InspectorFrontendHost.events.addEventListener(InspectorFrontendHostAPI.Events.DispatchMessageChunk, this._dispatchMessageChunk.bind(this), this);
 
     return Promise.resolve();
   }
@@ -55,39 +61,37 @@ class DevToolsDriver extends Driver {
 
   beginLogging() {
     // log everything
-    InspectorBackendClass.Options.dumpLighthouseProtocolMessages = true;
+    InspectorBackendClass.Options.dumpInspectorProtocolMessages = true;
   }
 
   ceaseLogging() {
-    InspectorBackendClass.Options.dumpLighthouseProtocolMessages = false;
+    InspectorBackendClass.Options.dumpInspectorProtocolMessages = false;
   }
 
-  /**
-   * Bind listeners for protocol events
-   * @param {!string} eventName
-   * @param {function(...)} cb
-   */
-  on(eventName, cb) {
-    if (typeof this._listeners[eventName] === 'undefined') {
-      this._listeners[eventName] = [];
+  _dispatchMessage(event) {
+    // log events received
+    debugger;
+    log.log('<=', method, params);
+
+    this._eventEmitter.emit(method, params);
+  }
+
+  _dispatchMessageChunk(event) {
+    console.log('evtchunk', arguments);
+    var messageChunk = /** @type {string} */ (event.data["messageChunk"]);
+    var messageSize = /** @type {number} */ (event.data["messageSize"]);
+    if (messageSize) {
+        this._messageBuffer = "";
+        this._messageSize = messageSize;
     }
-    // log event listeners being bound
-    log.log('NOT IMPLEMENTED listen for event =>', eventName);
-    this._listeners[eventName].push(cb);
-  }
-
-  _onEvent(source, method, params) {
-    if (typeof this._listeners[method] === 'undefined') {
-      return;
+    this._messageBuffer += messageChunk;
+    if (this._messageBuffer.length === this._messageSize) {
+        this.dispatch(this._messageBuffer);
+        this._messageBuffer = "";
+        this._messageSize = 0;
     }
-
-    this._listeners[method].forEach(cb => {
-      cb(params);
-    });
-
-    // Reset the listeners;
-    this._listeners[method].length = 0;
   }
+
 
   /**
    * Call protocol methods
@@ -104,26 +108,12 @@ class DevToolsDriver extends Driver {
 
       log.log('method => browser', command, params);
 
-      window.lighthouseConnection.sendCommand(command, params, handleResponse);
+      WebInspector.sendOverProtocol(command, params).then(handleResponse);
     });
   }
 
   handleUnexpectedDetach(detachReason) {
     throw new Error('Lighthouse detached from browser: ' + detachReason);
-  }
-
-  off(eventName, cb) {
-    if (typeof this._listeners[eventName] === 'undefined') {
-      console.warn(`Unable to remove listener ${eventName}; no such listener found.`);
-      return;
-    }
-
-    const callbackIndex = this._listeners[eventName].indexOf(cb);
-    if (callbackIndex === -1) {
-      return;
-    }
-
-    this._listeners[eventName].splice(callbackIndex, 1);
   }
 }
 
