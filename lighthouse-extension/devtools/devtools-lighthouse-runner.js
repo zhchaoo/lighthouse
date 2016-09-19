@@ -21,7 +21,7 @@ const DevToolsProtocol = require('../../lighthouse-core/gather/drivers/devtools.
 
 const Runner = require('../../lighthouse-core/runner');
 const Config = require('../../lighthouse-core/config/config');
-const defaultConfig = require('../../lighthouse-core/config/default.json');
+const devtoolsConfig = require('../../lighthouse-core/config/devtools.json');
 
 const NO_SCORE_PROVIDED = '-1';
 
@@ -31,13 +31,15 @@ global.runAudits = function(options) {
   const url = options.url;
 
     // Always start with a freshly parsed default config.
-  const runConfig = JSON.parse(JSON.stringify(defaultConfig));
+  const runConfig = JSON.parse(JSON.stringify(devtoolsConfig));
   const config = new Config(runConfig);
   // Add url and config to fresh options object.
   const runOptions = Object.assign({}, options, {url, config});
 
   // Run Lighthouse.
-  return Runner.run(driver, runOptions).catch(e => {
+  return Runner.run(driver, runOptions).then(results => {
+    debugger;
+  }).catch(e => {
     console.error(e);
     throw e;
   });
