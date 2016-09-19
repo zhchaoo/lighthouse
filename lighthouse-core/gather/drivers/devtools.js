@@ -33,7 +33,7 @@ class DevToolsDriver extends Driver {
 
   constructor() {
     super();
-    this._listeners = {};
+    console.log('devtoolsDriver', 'initializing...');
     // this.handleUnexpectedDetach();
   }
 
@@ -47,17 +47,22 @@ class DevToolsDriver extends Driver {
 
     this._eventEmitter = new EventEmitter();
 
-    InspectorFrontendHost.events.addEventListener(InspectorFrontendHostAPI.Events.DispatchMessage, this._dispatchMessage.bind(this), this);
-    InspectorFrontendHost.events.addEventListener(InspectorFrontendHostAPI.Events.DispatchMessageChunk, this._dispatchMessageChunk.bind(this), this);
+    this._connection = WebInspector.targetManager.mainTarget().connection();
+    this._origConnectionDispatch = this._connection.dispatch.bind(this._connection);
+    // overwrite handler
+    this._connection.dispatch = this._connectionDispatchHijack.bind(this);
 
     return Promise.resolve();
   }
 
   disconnect() {
     this.ceaseLogging();
+    this._connection.dispatch = this._origConnectionDispatch;
+    this._eventEmitter = null;
     // we dont' really disconnect in this scenario
     return Promise.resolve();
   }
+
 
   beginLogging() {
     // log everything
@@ -68,30 +73,30 @@ class DevToolsDriver extends Driver {
     InspectorBackendClass.Options.dumpInspectorProtocolMessages = false;
   }
 
-  _dispatchMessage(event) {
-    // log events received
-    debugger;
-    log.log('<=', method, params);
+  /**
+   * Intercept all messages being received by DevTools, passing along events if we find them.
+   * @param  {!MessageEvent} message
+   */
+  _connectionDispatchHijack(message) {
+    var messageObject = /** @type {!Object} */ ((typeof message === 'string') ?
+        JSON.parse(message) : message);
 
+    // handle response to a method
+    if ('id' in messageObject) {
+      this._origConnectionDispatch(message);
+      return;
+    }
+
+    // handle it as an event
+    const method = messageObject.method;
+    const params = messageObject.params;
+
+    console.log('<=', method, params);
+    // tell lighthouse about the event
     this._eventEmitter.emit(method, params);
+    // let devtools know about these events, too.
+    this._origConnectionDispatch(message);
   }
-
-  _dispatchMessageChunk(event) {
-    console.log('evtchunk', arguments);
-    var messageChunk = /** @type {string} */ (event.data["messageChunk"]);
-    var messageSize = /** @type {number} */ (event.data["messageSize"]);
-    if (messageSize) {
-        this._messageBuffer = "";
-        this._messageSize = messageSize;
-    }
-    this._messageBuffer += messageChunk;
-    if (this._messageBuffer.length === this._messageSize) {
-        this.dispatch(this._messageBuffer);
-        this._messageBuffer = "";
-        this._messageSize = 0;
-    }
-  }
-
 
   /**
    * Call protocol methods
@@ -101,14 +106,13 @@ class DevToolsDriver extends Driver {
    */
   sendCommand(command, params) {
     return new Promise((resolve, reject) => {
-      const handleResponse = result => {
-        log.log('method <= browser OK', command, result);
+      function handleResponse(result) {
+        console.log('method <= browser OK', command, result);
         resolve(result);
-      };
+      }
 
-      log.log('method => browser', command, params);
-
-      WebInspector.sendOverProtocol(command, params).then(handleResponse);
+      console.log('method => browser', command, params);
+      WebInspector.sendOverProtocol(command, params).then(handleResponse.bind(this));
     });
   }
 
