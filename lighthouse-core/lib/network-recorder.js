@@ -26,7 +26,7 @@ class NetworkRecorder extends EventEmitter {
     this._records = recordArray;
 
     // branch for native devtools
-    if (WebInspector.targetManager) {
+    if (WebInspector.targetManager && WebInspector.targetManager.mainTarget) {
       this.networkManager = WebInspector.targetManager.mainTarget()._connection._dispatchers.Network._dispatcher._manager;
     } else {
       this.networkManager = NetworkManager.createWithFakeTarget();
