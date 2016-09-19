@@ -26,7 +26,7 @@ class ThemeColor extends Audit {
   static get meta() {
     return {
       category: 'HTML',
-      name: 'theme-color-meta',
+      name: 'meta-theme-color',
       description: 'HTML has a theme-color <meta>',
       requiredArtifacts: ['ThemeColor']
     };

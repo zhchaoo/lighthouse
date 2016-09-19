@@ -26,7 +26,7 @@ class GeolocationOnStart extends Audit {
   static get meta() {
     return {
       category: 'UX',
-      name: 'geolocation',
+      name: 'geolocation-on-start',
       description: 'Page does not automatically request geolocation',
       requiredArtifacts: ['GeolocationOnStart']
     };
