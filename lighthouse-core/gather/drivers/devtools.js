@@ -17,15 +17,8 @@
 'use strict';
 
 const Driver = require('./driver.js');
-const log = require('../../lib/log.js');
 
 const EventEmitter = require('events').EventEmitter;
-
-/**
- * VERY MUCH WIP.
- * DevTools side of this patch (where most action is right now... ) is at:
- *    https://codereview.chromium.org/1933893003
- */
 
 /* globals WebInspector, InspectorBackendClass */
 
@@ -56,6 +49,7 @@ class DevToolsDriver extends Driver {
   }
 
   disconnect() {
+    this.sendCommand('Emulation.clearDeviceMetricsOverride');
     this.ceaseLogging();
     this._connection.dispatch = this._origConnectionDispatch;
     this._eventEmitter = null;
