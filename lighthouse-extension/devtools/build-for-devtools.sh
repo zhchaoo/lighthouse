@@ -3,16 +3,12 @@
 # run from /lighthouse-extension
 #     ./devtools/build-for-devtools.sh
 
-browserify \
-  --debug \
-  --transform brfs \
-  --ignore npmlog \
-  --ignore chrome-remote-interface \
-  --ignore chrome-devtools-frontend \
-  --exclude /Users/paulirish/code/lighthouse/lighthouse-core/lib/web-inspector-impl.js \
-  devtools/devtools-lighthouse-runner.js \
-  > lighthouse-lib.js
+gulp devtools
 
+cd devtools
+# extract sourcemap into seperate file for speed
+cat dist/devtools-lighthouse-runner.js | exorcist dist/lighthouse-lib.js.map > dist/lighthouse-lib.js
+# copy over to real devtools
+cp -v dist/lighthouse-lib.js* $HOME/chromium/src/third_party/WebKit/Source/devtools/front_end/audits/
 
-cp lighthouse-lib.js /Users/paulirish/chromium/src/third_party/WebKit/Source/devtools/front_end/audits/
-rm lighthouse-lib.js
+echo "done!"

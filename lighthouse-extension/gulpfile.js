@@ -143,6 +143,51 @@ gulp.task('browserify', () => {
     .pipe(gulp.dest('dist/scripts'));
 });
 
+// rough copy of above task
+gulp.task('devtools', () => {
+  return gulp.src('devtools/devtools-lighthouse-runner.js', {read: false})
+    .pipe(tap(file => {
+      let bundle = browserify(file.path, {debug: true})
+      // Fix an issue with Babelified code that doesn't brfs well.
+      .transform('./fs-transform', {
+        global: true
+      })
+      // Transform the fs.readFile etc, but do so in all the modules.
+      .transform('brfs', {
+        global: true
+      });
+
+      // Do the additional transform to convert references to devtools-timeline-model
+      // to the modified version internal to Lighthouse.
+      bundle.transform('./dtm-transform.js', {
+        global: true
+      })
+      .ignore('../lighthouse-core/lib/asset-saver.js') // relative from gulpfile location
+      .ignore('chrome-remote-interface')
+      .ignore('chrome-devtools-frontend')
+      .ignore('source-map');
+
+      bundle.exclude('../lighthouse-core/lib/web-inspector-impl.js');
+
+      // Expose the audits, gatherers, and computed artifacts so they can be dynamically loaded.
+      const corePath = '../lighthouse-core/';
+      const driverPath = `${corePath}gather/`;
+      audits.forEach(audit => {
+        bundle = bundle.require(audit, {expose: audit.replace(corePath, '../')});
+      });
+      gatherers.forEach(gatherer => {
+        bundle = bundle.require(gatherer, {expose: gatherer.replace(driverPath, './')});
+      });
+      computedArtifacts.forEach(artifact => {
+        bundle = bundle.require(artifact, {expose: artifact.replace(driverPath, './')});
+      });
+
+      // Inject the new browserified contents back into our gulp pipeline
+      file.contents = bundle.bundle();
+    }))
+    .pipe(gulp.dest('devtools/dist/'));
+});
+
 gulp.task('clean', () => {
   return del(['.tmp', 'dist', 'app/scripts']).then(paths =>
     paths.forEach(path => gutil.log('deleted:', gutil.colors.blue(path)))
