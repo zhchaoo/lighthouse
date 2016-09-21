@@ -63,110 +63,110 @@ class TTIMetric extends Audit {
       const pendingTracingModel = artifacts.requestTracingModel(trace);
       const pendingFMP = FMPMetric.audit(artifacts);
 
-      return resolve(TTIMetric.calculate(pendingSpeedline, pendingTracingModel, pendingFMP, trace));
+      const ttiP = Promise.all([pendingSpeedline, pendingTracingModel, pendingFMP])
+          .then(TTIMetric.calculate);
+      return resolve(ttiP);
     }).catch(generateError);
   }
 
-  static calculate(pendingSpeedline, pendingTracingModel, pendingFMP, trace) {
-    return Promise.all([pendingSpeedline, pendingTracingModel, pendingFMP]).then(results => {
-      const speedline = results[0];
-      const model = results[1];
-      const fmpResult = results[2];
-      if (fmpResult.rawValue === -1) {
-        return generateError(fmpResult.debugString);
-      }
-      const fmpTiming = parseFloat(fmpResult.rawValue);
-      const timings = fmpResult.extendedInfo && fmpResult.extendedInfo.value &&
-          fmpResult.extendedInfo.value.timings;
+  static calculate(results) {
+    const speedline = results[0];
+    const model = results[1];
+    const fmpResult = results[2];
+    if (fmpResult.rawValue === -1) {
+      return generateError(fmpResult.debugString);
+    }
+    const fmpTiming = parseFloat(fmpResult.rawValue);
+    const timings = fmpResult.extendedInfo && fmpResult.extendedInfo.value &&
+        fmpResult.extendedInfo.value.timings;
 
-      const endOfTraceTime = model.bounds.max;
+    const endOfTraceTime = model.bounds.max;
 
-      // TODO: Wait for DOMContentLoadedEndEvent
-      // TODO: Wait for UA loading indicator to be done
+    // TODO: Wait for DOMContentLoadedEndEvent
+    // TODO: Wait for UA loading indicator to be done
 
-      // TODO CHECK these units are the same
-      const fMPts = timings.fMPfull + timings.navStart;
+    // TODO CHECK these units are the same
+    const fMPts = timings.fMPfull + timings.navStart;
 
-      // look at speedline results for 85% starting at FMP
-      let visuallyReadyTiming = 0;
+    // look at speedline results for 85% starting at FMP
+    let visuallyReadyTiming = 0;
 
-      // We start looking at Math.Max(FMPMetric, visProgress[0.85])
-      if (speedline.frames) {
-        const eightyFivePctVC = speedline.frames.find(frame => {
-          return frame.getTimeStamp() >= fMPts && frame.getProgress() >= 85;
-        });
-
-        if (eightyFivePctVC) {
-          // TODO CHECK these units are the same
-          visuallyReadyTiming = eightyFivePctVC.getTimeStamp() - timings.navStart;
-        }
-      }
-
-      // Find first 500ms window where Est Input Latency is <50ms at the 90% percentile.
-      let startTime = Math.max(fmpTiming, visuallyReadyTiming) - 50;
-      let endTime;
-      let currentLatency = Infinity;
-      const percentiles = [0.9]; // [0.75, 0.9, 0.99, 1];
-      const threshold = 50;
-      let foundLatencies = [];
-
-      // When we've found a latency that's good enough, we're good.
-      while (currentLatency > threshold) {
-        // While latency is too high, increment just 50ms and look again.
-        startTime += 50;
-        endTime = startTime + 500;
-        // If there's no more room in the trace to look, we're done.
-        if (endTime > endOfTraceTime) {
-          return generateError('Entire trace was found to be busy.');
-        }
-        // Get our expected latency for the time window
-        const latencies = TracingProcessor.getRiskToResponsiveness(
-          model, trace, startTime, endTime, percentiles);
-        const estLatency = latencies[0].time.toFixed(2);
-        foundLatencies.push({
-          estLatency: estLatency,
-          startTime: startTime.toFixed(1)
-        });
-
-        // Grab this latency and try the threshold again
-        currentLatency = estLatency;
-      }
-      const timeToInteractive = parseFloat(startTime.toFixed(1));
-
-      // Use the CDF of a log-normal distribution for scoring.
-      //   < 1200ms: score≈100
-      //   5000ms: score=50
-      //   >= 15000ms: score≈0
-      const distribution = TracingProcessor.getLogNormalDistribution(SCORING_MEDIAN,
-          SCORING_POINT_OF_DIMINISHING_RETURNS);
-      let score = 100 * distribution.computeComplementaryPercentile(startTime);
-
-      // Clamp the score to 0 <= x <= 100.
-      score = Math.min(100, score);
-      score = Math.max(0, score);
-      score = Math.round(score);
-
-      const extendedInfo = {
-        timings: {
-          fMP: fmpTiming.toFixed(1),
-          visuallyReady: visuallyReadyTiming.toFixed(1),
-          mainThreadAvail: startTime.toFixed(1)
-        },
-        expectedLatencyAtTTI: currentLatency,
-        foundLatencies
-      };
-
-      return TTIMetric.generateAuditResult({
-        score,
-        rawValue: timeToInteractive,
-        displayValue: `${timeToInteractive}ms`,
-        optimalValue: this.meta.optimalValue,
-        debugString: speedline.debugString,
-        extendedInfo: {
-          value: extendedInfo,
-          formatter: Formatter.SUPPORTED_FORMATS.NULL
-        }
+    // We start looking at Math.Max(FMPMetric, visProgress[0.85])
+    if (speedline.frames) {
+      const eightyFivePctVC = speedline.frames.find(frame => {
+        return frame.getTimeStamp() >= fMPts && frame.getProgress() >= 85;
       });
+
+      if (eightyFivePctVC) {
+        // TODO CHECK these units are the same
+        visuallyReadyTiming = eightyFivePctVC.getTimeStamp() - timings.navStart;
+      }
+    }
+
+    // Find first 500ms window where Est Input Latency is <50ms at the 90% percentile.
+    let startTime = Math.max(fmpTiming, visuallyReadyTiming) - 50;
+    let endTime;
+    let currentLatency = Infinity;
+    const percentiles = [0.9]; // [0.75, 0.9, 0.99, 1];
+    const threshold = 50;
+    let foundLatencies = [];
+
+    // When we've found a latency that's good enough, we're good.
+    while (currentLatency > threshold) {
+      // While latency is too high, increment just 50ms and look again.
+      startTime += 50;
+      endTime = startTime + 500;
+      // If there's no more room in the trace to look, we're done.
+      if (endTime > endOfTraceTime) {
+        return generateError('Entire trace was found to be busy.');
+      }
+      // Get our expected latency for the time window
+      const latencies = TracingProcessor.getRiskToResponsiveness(
+        model, trace, startTime, endTime, percentiles);
+      const estLatency = latencies[0].time.toFixed(2);
+      foundLatencies.push({
+        estLatency: estLatency,
+        startTime: startTime.toFixed(1)
+      });
+
+      // Grab this latency and try the threshold again
+      currentLatency = estLatency;
+    }
+    const timeToInteractive = parseFloat(startTime.toFixed(1));
+
+    // Use the CDF of a log-normal distribution for scoring.
+    //   < 1200ms: score≈100
+    //   5000ms: score=50
+    //   >= 15000ms: score≈0
+    const distribution = TracingProcessor.getLogNormalDistribution(SCORING_MEDIAN,
+        SCORING_POINT_OF_DIMINISHING_RETURNS);
+    let score = 100 * distribution.computeComplementaryPercentile(startTime);
+
+    // Clamp the score to 0 <= x <= 100.
+    score = Math.min(100, score);
+    score = Math.max(0, score);
+    score = Math.round(score);
+
+    const extendedInfo = {
+      timings: {
+        fMP: fmpTiming.toFixed(1),
+        visuallyReady: visuallyReadyTiming.toFixed(1),
+        mainThreadAvail: startTime.toFixed(1)
+      },
+      expectedLatencyAtTTI: currentLatency,
+      foundLatencies
+    };
+
+    return TTIMetric.generateAuditResult({
+      score,
+      rawValue: timeToInteractive,
+      displayValue: `${timeToInteractive}ms`,
+      optimalValue: this.meta.optimalValue,
+      debugString: speedline.debugString,
+      extendedInfo: {
+        value: extendedInfo,
+        formatter: Formatter.SUPPORTED_FORMATS.NULL
+      }
     });
   }
 }
