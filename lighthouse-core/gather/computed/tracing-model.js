@@ -29,7 +29,7 @@ class TracingModel extends ComputedArtifact {
   /**
    * Return catapult traceviewer model
    * @param {{traceEvents: !Array}} trace
-   * @return {!Promise}
+   * @return {!Promise<{!TracingProcessorModel}>}
    */
   compute_(trace) {
     const tracingProcessor = new TracingProcessor();

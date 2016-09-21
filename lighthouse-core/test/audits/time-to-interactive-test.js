@@ -41,7 +41,7 @@ describe('Performance: time-to-interactive audit', () => {
   });
 
   it('evaluates valid input correctly', done => {
-    let artifacts = computedArtifacts;
+    const artifacts = computedArtifacts;
     artifacts.traces = {
       [Audit.DEFAULT_PASS]: {
         traceEvents: pwaTrace
