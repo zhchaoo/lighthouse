@@ -39,12 +39,10 @@ class EstimatedInputLatency extends Audit {
     };
   }
 
-  static calculate(speedline, trace) {
+  static calculate(speedline, trace, model) {
     // Use speedline's first paint as start of range for input latency check.
     const startTime = speedline.first;
 
-    const tracingProcessor = new TracingProcessor();
-    const model = tracingProcessor.init(trace);
     const latencyPercentiles = TracingProcessor.getRiskToResponsiveness(model, trace, startTime);
 
     const ninetieth = latencyPercentiles.find(result => result.percentile === 0.9);
@@ -81,14 +79,20 @@ class EstimatedInputLatency extends Audit {
   static audit(artifacts) {
     const trace = artifacts.traces[this.DEFAULT_PASS];
 
-    return artifacts.requestSpeedline(trace)
-      .then(speedline => EstimatedInputLatency.calculate(speedline, trace))
-      .catch(err => {
-        return EstimatedInputLatency.generateAuditResult({
-          rawValue: -1,
-          debugString: 'Speedline unable to parse trace contents: ' + err.message
-        });
+    const pendingSpeedline = artifacts.requestSpeedline(trace);
+    const pendingTracingModel = artifacts.requestTracingModel(trace);
+
+    return Promise.all([pendingSpeedline, pendingTracingModel]).then(results => {
+      const speedline = results[0];
+      const model = results[1];
+
+      return EstimatedInputLatency.calculate(speedline, trace, model);
+    }).catch(err => {
+      return EstimatedInputLatency.generateAuditResult({
+        rawValue: -1,
+        debugString: 'Speedline unable to parse trace contents: ' + err.message
       });
+    });
   }
 }
 

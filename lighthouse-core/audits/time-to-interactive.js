@@ -59,12 +59,14 @@ class TTIMetric extends Audit {
   static audit(artifacts) {
     const trace = artifacts.traces[Audit.DEFAULT_PASS];
     const pendingSpeedline = artifacts.requestSpeedline(trace);
+    const pendingTracingModel = artifacts.requestTracingModel(trace);
     const pendingFMP = FMPMetric.audit(artifacts);
 
     // We start looking at Math.Max(FMPMetric, visProgress[0.85])
-    return Promise.all([pendingSpeedline, pendingFMP]).then(results => {
+    return Promise.all([pendingSpeedline, pendingTracingModel, pendingFMP]).then(results => {
       const speedline = results[0];
-      const fmpResult = results[1];
+      const model = results[1];
+      const fmpResult = results[2];
       if (fmpResult.rawValue === -1) {
         return generateError(fmpResult.debugString);
       }
@@ -73,9 +75,6 @@ class TTIMetric extends Audit {
           fmpResult.extendedInfo.value.timings;
 
       // Process the trace
-      const tracingProcessor = new TracingProcessor();
-      const trace = artifacts.traces[Audit.DEFAULT_PASS];
-      const model = tracingProcessor.init(trace);
       const endOfTraceTime = model.bounds.max;
 
       // TODO: Wait for DOMContentLoadedEndEvent
