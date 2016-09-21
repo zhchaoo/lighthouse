@@ -20,41 +20,40 @@ const GatherRunner = require('../../gather/gather-runner.js');
 const assert = require('assert');
 
 const pwaTrace = require('../fixtures/traces/progressive-app.json');
+const computedArtifacts = GatherRunner.instantiateComputedArtifacts();
 
-let mockArtifacts = GatherRunner.instantiateComputedArtifacts();
+function generateArtifactsWithTrace(trace) {
+  return Object.assign(computedArtifacts, {
+    traces: {
+      [Audit.DEFAULT_PASS]: trace
+    }
+  });
+}
 
 /* eslint-env mocha */
 describe('Performance: time-to-interactive audit', () => {
   it('scores a -1 with invalid trace data', () => {
-    return Audit.audit({
-      traces: {
-        [Audit.DEFAULT_PASS]: {
-          traceEvents: '[{"pid": 15256,"tid": 1295,"t'
-        }
-      },
-      requestSpeedline() {
-        return Promise.resolve({first: 500});
-      }
-    }).then(output => {
+    const artifacts = generateArtifactsWithTrace({traceEvents: [{pid: 15256, tid: 1295, t: 5}]});
+    return Audit.audit(artifacts).then(output => {
       assert.equal(output.rawValue, -1);
       assert(output.debugString);
     });
   });
 
-  it('evaluates valid input correctly', () => {
-    let artifacts = mockArtifacts;
+  it('evaluates valid input correctly', done => {
+    let artifacts = computedArtifacts;
     artifacts.traces = {
       [Audit.DEFAULT_PASS]: {
         traceEvents: pwaTrace
       }
     };
-
     return Audit.audit(artifacts).then(output => {
       assert.equal(output.rawValue, '1105.8', output.debugString);
       assert.equal(output.extendedInfo.value.expectedLatencyAtTTI, '20.72');
       assert.equal(output.extendedInfo.value.timings.fMP, '1099.5');
       assert.equal(output.extendedInfo.value.timings.mainThreadAvail, '1105.8');
       assert.equal(output.extendedInfo.value.timings.visuallyReady, '1105.8');
+      done();
     });
   });
 });

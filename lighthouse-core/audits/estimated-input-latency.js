@@ -77,23 +77,28 @@ class EstimatedInputLatency extends Audit {
    * @return {!Promise<!AuditResult>} The score from the audit, ranging from 0-100.
    */
   static audit(artifacts) {
-    const trace = artifacts.traces[this.DEFAULT_PASS];
+    return new Promise((resolve, reject) => {
+      const trace = artifacts.traces[this.DEFAULT_PASS];
 
-    const pendingSpeedline = artifacts.requestSpeedline(trace);
-    const pendingTracingModel = artifacts.requestTracingModel(trace);
+      const pendingSpeedline = artifacts.requestSpeedline(trace);
+      const pendingTracingModel = artifacts.requestTracingModel(trace);
 
-    return Promise.all([pendingSpeedline, pendingTracingModel]).then(results => {
-      const speedline = results[0];
-      const model = results[1];
+      const computedP = Promise.all([pendingSpeedline, pendingTracingModel]).then(results => {
+        const speedline = results[0];
+        const model = results[1];
 
-      return EstimatedInputLatency.calculate(speedline, trace, model);
-    }).catch(err => {
-      return EstimatedInputLatency.generateAuditResult({
-        rawValue: -1,
-        debugString: 'Speedline unable to parse trace contents: ' + err.message
+        return EstimatedInputLatency.calculate(speedline, trace, model);
       });
-    });
+      resolve(computedP);
+    }).catch(generateError);
   }
+}
+
+function generateError(err) {
+  return EstimatedInputLatency.generateAuditResult({
+    rawValue: -1,
+    debugString: 'EIL audit unable continue. Bad trace contents: ' + err.message
+  });
 }
 
 module.exports = EstimatedInputLatency;

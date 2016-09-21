@@ -57,12 +57,17 @@ class TTIMetric extends Audit {
    * @return {!Promise<!AuditResult>} The score from the audit, ranging from 0-100.
    */
   static audit(artifacts) {
-    const trace = artifacts.traces[Audit.DEFAULT_PASS];
-    const pendingSpeedline = artifacts.requestSpeedline(trace);
-    const pendingTracingModel = artifacts.requestTracingModel(trace);
-    const pendingFMP = FMPMetric.audit(artifacts);
+    return new Promise((resolve, reject) => {
+      const trace = artifacts.traces[Audit.DEFAULT_PASS];
+      const pendingSpeedline = artifacts.requestSpeedline(trace);
+      const pendingTracingModel = artifacts.requestTracingModel(trace);
+      const pendingFMP = FMPMetric.audit(artifacts);
 
-    // We start looking at Math.Max(FMPMetric, visProgress[0.85])
+      return resolve(TTIMetric.calculate(pendingSpeedline, pendingTracingModel, pendingFMP, trace));
+    }).catch(generateError);
+  }
+
+  static calculate(pendingSpeedline, pendingTracingModel, pendingFMP, trace) {
     return Promise.all([pendingSpeedline, pendingTracingModel, pendingFMP]).then(results => {
       const speedline = results[0];
       const model = results[1];
@@ -74,7 +79,6 @@ class TTIMetric extends Audit {
       const timings = fmpResult.extendedInfo && fmpResult.extendedInfo.value &&
           fmpResult.extendedInfo.value.timings;
 
-      // Process the trace
       const endOfTraceTime = model.bounds.max;
 
       // TODO: Wait for DOMContentLoadedEndEvent
@@ -86,6 +90,7 @@ class TTIMetric extends Audit {
       // look at speedline results for 85% starting at FMP
       let visuallyReadyTiming = 0;
 
+      // We start looking at Math.Max(FMPMetric, visProgress[0.85])
       if (speedline.frames) {
         const eightyFivePctVC = speedline.frames.find(frame => {
           return frame.getTimeStamp() >= fMPts && frame.getProgress() >= 85;
@@ -162,8 +167,6 @@ class TTIMetric extends Audit {
           formatter: Formatter.SUPPORTED_FORMATS.NULL
         }
       });
-    }).catch(err => {
-      return generateError(err);
     });
   }
 }
