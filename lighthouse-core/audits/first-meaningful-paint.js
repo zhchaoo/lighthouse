@@ -30,6 +30,8 @@ const SCORING_MEDIAN = 4000;
 
 const BLOCK_FIRST_MEANINGFUL_PAINT_IF_BLANK_CHARACTERS_MORE_THAN = 200;
 
+const fmpCache = new Map();
+
 class FirstMeaningfulPaint extends Audit {
   /**
    * @return {!AuditMeta}
@@ -57,6 +59,9 @@ class FirstMeaningfulPaint extends Audit {
       if (!traceContents || !Array.isArray(traceContents)) {
         throw new Error(FAILURE_MESSAGE);
       }
+      if (fmpCache.has(traceContents)) {
+        return resolve(fmpCache.get(traceContents));
+      }
       const evts = this.collectEvents(traceContents);
 
       const navStart = evts.navigationStart;
@@ -79,7 +84,7 @@ class FirstMeaningfulPaint extends Audit {
 
       const result = this.calculateScore(data);
 
-      resolve(FirstMeaningfulPaint.generateAuditResult({
+      var auditResult = FirstMeaningfulPaint.generateAuditResult({
         score: result.score,
         rawValue: parseFloat(result.duration),
         displayValue: `${result.duration}ms`,
@@ -89,7 +94,9 @@ class FirstMeaningfulPaint extends Audit {
           value: result.extendedInfo,
           formatter: Formatter.SUPPORTED_FORMATS.NULL
         }
-      }));
+      });
+      fmpCache.set(traceContents, auditResult);
+      return resolve(auditResult);
     }).catch(err => {
       // Recover from trace parsing failures.
       return FirstMeaningfulPaint.generateAuditResult({
