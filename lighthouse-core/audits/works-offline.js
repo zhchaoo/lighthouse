@@ -26,7 +26,8 @@ class WorksOffline extends Audit {
     return {
       category: 'Offline',
       name: 'works-offline',
-      description: 'URL responds with a 200 when offline',
+      description: 'Loads successfully when network is offline',
+      helpText: 'Use a <a href="https://developers.google.com/web/fundamentals/getting-started/primers/service-workers">service worker</a> to enable offline support.',
       requiredArtifacts: ['Offline']
     };
   }
