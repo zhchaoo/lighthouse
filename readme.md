@@ -101,35 +101,39 @@ $ lighthouse --help
 lighthouse <url>
 
 Logging:
-  --verbose  Displays verbose logging                                                 [boolean]
-  --quiet    Displays no progress or debug logs                                       [boolean]
+  --verbose  Displays verbose logging                                                      [boolean]
+  --quiet    Displays no progress or debug logs                                            [boolean]
 
 Configuration:
-  --mobile                 Emulates a Nexus 5X                                  [default: true]
-  --save-assets            Save the trace contents & screenshots to disk              [boolean]
-  --save-artifacts         Save all gathered artifacts to disk                        [boolean]
-  --list-all-audits        Prints a list of all available audits and exits            [boolean]
-  --list-trace-categories  Prints a list of all required trace categories and exits   [boolean]
-  --config-path            The path to the config JSON.
-  --perf                   Use a performance-test-only configuration                  [boolean]
+  --mobile                      Emulates a Nexus 5X                                  [default: true]
+  --disable-device-emulation    Disable device emulation                                   [boolean]
+  --disable-cpu-throttling      Disable cpu throttling                                     [boolean]
+  --disable-network-throttling  Disable network throttling                                 [boolean]
+  --save-assets                 Save the trace contents & screenshots to disk              [boolean]
+  --save-artifacts              Save all gathered artifacts to disk                        [boolean]
+  --list-all-audits             Prints a list of all available audits and exits            [boolean]
+  --list-trace-categories       Prints a list of all required trace categories and exits   [boolean]
+  --config-path                 The path to the config JSON.
+  --perf                        Use a performance-test-only configuration                  [boolean]
 
 Output:
   --output       Reporter for the results
-                         [choices: "pretty", "json", "html"]                [default: "pretty"]
+                         [choices: "pretty", "json", "html"]                     [default: "pretty"]
   --output-path  The file path to output the results
-                 Example: --output-path=./lighthouse-results.html           [default: "stdout"]
+                 Example: --output-path=./lighthouse-results.html                [default: "stdout"]
 
 Options:
-  --help             Show help                                                        [boolean]
-  --version          Show version number                                              [boolean]
-  --skip-autolaunch  Skip autolaunch of Chrome when accessing port 9222 fails         [boolean]
-  --select-chrome    Choose Chrome location when multiple installations are found     [boolean]
+  --help             Show help                                                             [boolean]
+  --version          Show version number                                                   [boolean]
+  --skip-autolaunch  Skip autolaunch of Chrome when accessing port 9222 fails              [boolean]
+  --select-chrome    Choose Chrome location when multiple installations are found          [boolean]
 ```
 
 ## Lighthouse w/ mobile devices
 
 Lighthouse can run against a real mobile device. You can follow the [Remote Debugging on Android (Legacy Workflow)](https://developer.chrome.com/devtools/docs/remote-debugging-legacy) up through step 3.3, but the TL;DR is install & run adb, enable USB debugging, then port forward 9222 from the device to the machine with Lighthouse.
 
+Run the cli with --disable-device-emulation=true configuration to disable device emulation.
 ```sh
 $ adb kill-server
 

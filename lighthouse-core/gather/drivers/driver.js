@@ -489,12 +489,22 @@ class Driver {
     });
   }
 
-  beginEmulation() {
-    return Promise.all([
-      emulation.enableNexus5X(this),
-      emulation.enableNetworkThrottling(this),
-      emulation.enableCPUThrottling(this),
-    ]);
+  beginEmulation(flags) {
+    let emulations = [];
+
+    if (!flags.enableDeviceEmulation && flags.mobile) {
+      emulations.push(emulation.enableNexus5X(this));
+    }
+
+    if (!flags.disableNetworkThrottling && flags.mobile) {
+      emulations.push(emulation.enableNetworkThrottling(this));
+    }
+
+    if (!flags.disableCpuThrottling && flags.mobile) {
+      emulations.push(emulation.enableCPUThrottling(this));
+    }
+
+    return Promise.all(emulations);
   }
 
   /**
