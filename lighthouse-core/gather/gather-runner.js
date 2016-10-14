@@ -209,12 +209,6 @@ class GatherRunner {
       return Promise.reject(new Error('You must provide a config'));
     }
 
-    // Default mobile emulation and page loading to true.
-    // The extension will switch these off initially.
-    if (typeof options.flags.mobile === 'undefined') {
-      options.flags.mobile = true;
-    }
-
     passes = this.instantiateGatherers(passes, options.config.configDir);
 
     return driver.connect()

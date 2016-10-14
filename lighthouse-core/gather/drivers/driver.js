@@ -492,15 +492,15 @@ class Driver {
   beginEmulation(flags) {
     let emulations = [];
 
-    if (!flags.enableDeviceEmulation && flags.mobile) {
+    if (!flags.disableDeviceEmulation) {
       emulations.push(emulation.enableNexus5X(this));
     }
 
-    if (!flags.disableNetworkThrottling && flags.mobile) {
+    if (!flags.disableNetworkThrottling) {
       emulations.push(emulation.enableNetworkThrottling(this));
     }
 
-    if (!flags.disableCpuThrottling && flags.mobile) {
+    if (!flags.disableCpuThrottling) {
       emulations.push(emulation.enableCPUThrottling(this));
     }
 
@@ -517,7 +517,7 @@ class Driver {
 
   /**
    * Enable internet connection, using emulated mobile settings if
-   * `options.flags.mobile` is true.
+   * `options.flags.disableNetworkThrottling` is false.
    * @param {!Object} options
    * @return {!Promise}
    */

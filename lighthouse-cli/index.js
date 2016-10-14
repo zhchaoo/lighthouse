@@ -52,7 +52,6 @@ const cli = yargs
   })
 
   .group([
-    'mobile',
     'save-assets',
     'save-artifacts',
     'list-all-audits',
@@ -61,7 +60,6 @@ const cli = yargs
     'perf'
   ], 'Configuration:')
   .describe({
-    'mobile': 'Emulates a Nexus 5X',
     'disable-device-emulation': 'Disable Nexus 5X emulation',
     'disable-cpu-throttling': 'Disable CPU throttling',
     'disable-network-throttling': 'Disable network throttling',
