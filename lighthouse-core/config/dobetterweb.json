@@ -9,6 +9,7 @@
       "../gather/gatherers/dobetterweb/console-time-usage",
       "../gather/gatherers/dobetterweb/datenow",
       "../gather/gatherers/dobetterweb/document-write",
+      "../gather/gatherers/dobetterweb/mutation-events",
       "../gather/gatherers/dobetterweb/websql"
     ]
   }],
@@ -18,6 +19,7 @@
     "../audits/dobetterweb/no-console-time",
     "../audits/dobetterweb/no-datenow",
     "../audits/dobetterweb/no-document-write",
+    "../audits/dobetterweb/no-mutation-events",
     "../audits/dobetterweb/no-old-flexbox",
     "../audits/dobetterweb/no-websql",
     "../audits/dobetterweb/uses-http2",
@@ -64,6 +66,9 @@
           "expectedValue": false
         },
         "no-console-time": {
+          "expectedValue": false
+        },
+        "no-mutation-events": {
           "expectedValue": false
         }
       }
