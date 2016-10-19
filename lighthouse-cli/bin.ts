@@ -62,7 +62,8 @@ const cli = yargs
     'list-all-audits',
     'list-trace-categories',
     'config-path',
-    'perf'
+    'perf',
+    'disable-network-throttling',
   ], 'Configuration:')
   .describe({
     'mobile': 'Emulates a Nexus 5X',
@@ -74,6 +75,7 @@ const cli = yargs
     'perf': 'Use a performance-test-only configuration',
     'skip-autolaunch': 'Skip autolaunch of chrome when accessing port 9222 fails',
     'select-chrome': 'Choose chrome location to use when multiple installations are found',
+    'disable-network-throttling': 'Disable network throttling when running audits.',
   })
 
   .group([
@@ -161,7 +163,7 @@ const cleanup = {
   }
 };
 
-function launchChromeAndRun(addresses) {
+function launchChromeAndRun(addresses: Array<string>) {
   const launcher = new ChromeLauncher({
     autoSelectChrome: !cli.selectChrome,
   });

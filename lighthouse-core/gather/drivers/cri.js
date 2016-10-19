@@ -23,8 +23,8 @@ const port = process.env.PORT || 9222;
 const log = require('../../lib/log.js');
 
 class CriDriver extends Driver {
-  constructor() {
-    super();
+  constructor(opts) {
+    super(opts);
 
     /**
      * Chrome remote interface instance.

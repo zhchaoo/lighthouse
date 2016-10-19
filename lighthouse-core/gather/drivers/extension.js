@@ -24,8 +24,8 @@ const EventEmitter = require('events').EventEmitter;
 
 class ExtensionDriver extends Driver {
 
-  constructor() {
-    super();
+  constructor(opts) {
+    super(opts);
     this._tabId = null;
 
     this._eventEmitter = new EventEmitter();

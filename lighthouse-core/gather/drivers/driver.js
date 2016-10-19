@@ -28,10 +28,15 @@ const PAUSE_AFTER_LOAD = 500;
 
 class Driver {
 
-  constructor() {
+  constructor(opts) {
+    opts = opts || {};
+
+    this.disableNetworkThrottling = opts._disableNetworkThrottling || false;
+
     this._traceEvents = [];
     this._traceCategories = Driver.traceCategories;
     this._eventEmitter = null;
+    this.opts = opts;
   }
 
   static get traceCategories() {
@@ -492,7 +497,13 @@ class Driver {
   beginEmulation() {
     return Promise.all([
       emulation.enableNexus5X(this),
-      emulation.enableNetworkThrottling(this)
+      () => {
+        if (this.opts['disable-network-throttling']) {
+          return Promise.resolve();
+        }
+
+        return emulation.enableNetworkThrottling();
+      }
     ]);
   }
 
@@ -512,7 +523,7 @@ class Driver {
    */
   goOnline(options) {
     return this.sendCommand('Network.enable').then(_ => {
-      if (options.flags.mobile) {
+      if (options.flags.mobile && !this.opts['disable-network-throttling']) {
         return emulation.enableNetworkThrottling(this);
       }
 
