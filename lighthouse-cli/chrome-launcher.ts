@@ -52,6 +52,7 @@ class ChromeLauncher {
   flags() {
     const flags = [
       '--remote-debugging-port=9222',
+      '--enable-gpu-benchmarking',
       '--disable-extensions',
       '--no-first-run',
       `--user-data-dir=${this.TMP_PROFILE_DIR}`

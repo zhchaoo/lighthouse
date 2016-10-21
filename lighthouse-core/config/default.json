@@ -23,6 +23,14 @@
     ]
   },
   {
+    "trace": true,
+    "loadPage": true,
+    "traceName": "scrolling",
+    "gatherers": [
+      "scrolling"
+    ]
+  },
+  {
     "gatherers": [
       "http-redirect",
       "html-without-javascript"
@@ -61,7 +69,8 @@
     "label",
     "tabindex",
     "content-width",
-    "geolocation-on-start"
+    "geolocation-on-start",
+    "infinite-scrolling"
   ],
 
   "aggregations": [{
@@ -310,6 +319,10 @@
           "comingSoon": true,
           "description": "Input fields use appropriate [type] attributes for custom keyboards",
           "category": "UX"
+        },
+        "infinite-scrolling": {
+          "value": 1,
+          "weight": 1
         }
       }
     }]
