@@ -321,7 +321,7 @@
           "category": "UX"
         },
         "infinite-scrolling": {
-          "value": 1,
+          "expectedValue": 100,
           "weight": 1
         }
       }

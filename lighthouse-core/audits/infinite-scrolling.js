@@ -28,7 +28,7 @@ class InfiniteScrolling extends Audit {
     return {
       category: 'Performance',
       name: 'infinite-scrolling',
-      description: 'Page scrolls at 60fps',
+      description: 'Infinite scrolling, List increment test.',
       requiredArtifacts: ['Scrolling']
     };
   }
@@ -38,16 +38,28 @@ class InfiniteScrolling extends Audit {
    * @return {!AuditResult}
    */
   static audit(artifacts) {
-    // const traceContents = artifacts.traces[TRACE_NAME].traceEvents;
-    const traceContents = artifacts.traces[this.DEFAULT_PASS].traceEvents;
-    const tracingProcessor = new TracingProcessor();
-    const model = tracingProcessor.init(traceContents);
-    // const smoothness = TracingProcessor.getAnimationSmoothness(model, traceContents);
-    const smoothness = 60
-    console.log('smoothness', smoothness);
+    if (typeof artifacts.Scrolling === 'undefined' ||
+      typeof artifacts.Scrolling.scrollOffset === 'undefined' ||
+      typeof artifacts.Scrolling.expectedOffset === 'undefined' ||
+      typeof artifacts.Scrolling.heightDiff === 'undefined') {
+      return InfiniteScrolling.generateAuditResult({
+        rawValue: -1,
+        debugString: 'Unable to find scroll.'
+      });
+    }
 
+    const scrollThreshould = artifacts.Scrolling.expectedOffset / 3;
+    if (artifacts.Scrolling.heightDiff < scrollThreshould) {
+      return InfiniteScrolling.generateAuditResult({
+        rawValue: -1,
+        debugString: 'The page has no infinite scroll list'
+      })
+    }
+    var scrollOffset = artifacts.Scrolling.scrollOffset - scrollThreshould;
+    var expectedOffset = artifacts.Scrolling.expectedOffset - scrollThreshould;
+    const scrollScore = Math.round(scrollOffset * 100 / expectedOffset);
     return InfiniteScrolling.generateAuditResult({
-      rawValue: 0
+      rawValue: scrollScore
     });
   }
 }

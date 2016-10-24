@@ -1,0 +1,33 @@
+{
+  "passes": [{
+    "recordNetwork": true,
+    "recordTrace": true,
+    "trace": true,
+    "loadPage": true,
+    "traceName": "scrolling",
+    "gatherers": [
+      "scrolling"
+    ]
+  }],
+
+  "audits": [
+    "infinite-scrolling"
+  ],
+
+  "aggregations": [{
+    "name": "Best Practices",
+    "description": "These audits do not affect your score but are worth a look.",
+    "scored": true,
+    "categorizable": true,
+    "items": [{
+      "name": "Page load performance is fast",
+      "description": "",
+      "audits": {
+        "infinite-scrolling": {
+          "expectedValue": 100,
+          "weight": 1
+        }
+      }
+    }]
+  }]
+}

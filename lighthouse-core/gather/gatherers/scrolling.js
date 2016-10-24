@@ -21,20 +21,38 @@
 
 const Gatherer = require('./gatherer');
 
-function scrollPage() {
-  const distance = document.body.offsetHeight - window.innerHeight;
-  chrome.gpuBenchmarking.smoothScrollBy(distance, __returnResults);
+function scrollPage(distance, speed) {
+  var oldTitle = document.title;
+  var ratio = document.body.clientWidth / screen.width;
+  var oldBodyHeight = document.body.clientHeight;
+  var oldDocHeight = document.documentElement.clientHeight;
+  var start = performance.now();
+  document.title = "Scrolling";
+  return new Promise((resolve, reject) => {
+    chrome.gpuBenchmarking.smoothScrollBy(distance * ratio, resolve,
+      0, 0, 0, "down", speed);
+  }).then(_ => {
+    var scrollTime = performance.now() - start;
+    var scrollOffset = window.pageYOffset / ratio;
+    var bodyHeightDiff = (document.body.clientHeight - oldBodyHeight) / ratio;
+    var docHeightDiff = (document.documentElement.clientHeight - oldDocHeight) / ratio;
+    document.title = oldTitle;
+    return ({scrollOffset: scrollOffset, expectedOffset: distance,
+      heightDiff: bodyHeightDiff > docHeightDiff ? bodyHeightDiff : docHeightDiff});
+  });
 }
 
 class Scrolling extends Gatherer {
   pass(options) {
     const driver = options.driver;
-    return driver.evaluateAsync(`(${scrollPage.toString()}())`)
-      .then(_ => {
-        this.artifact = 'lols';
+    const scrollDistance = options.config.scrollDistance ? options.config.scrollDistance : 10000;
+    const scrollSpeed = options.config.scrollSpeed ? options.config.scrollSpeed : 1000;
+    return driver.evaluateAsync(`(${scrollPage.toString()}(${scrollDistance}, ${scrollSpeed}))`)
+      .then(returnedValue => {
+        this.artifact = returnedValue;
       })
       .catch(_ => {
-        this.artifact = 'fail';
+        this.artifact = {scrollOffset: -1, heightDiff: -1, expectedOffset: scrollDistance};
       });
   }
 }
