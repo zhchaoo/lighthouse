@@ -17,8 +17,6 @@
 'use strict';
 
 const Audit = require('./audit');
-const TracingProcessor = require('../lib/traces/tracing-processor');
-const TRACE_NAME = 'scrolling';
 
 class InfiniteScrolling extends Audit {
   /**
@@ -26,7 +24,7 @@ class InfiniteScrolling extends Audit {
    */
   static get meta() {
     return {
-      category: 'Performance',
+      category: 'Best Practices',
       name: 'infinite-scrolling',
       description: 'Infinite scrolling, List increment test.',
       requiredArtifacts: ['Scrolling']
