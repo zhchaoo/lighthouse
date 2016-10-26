@@ -43,6 +43,10 @@ function scrollPage(distance, speed) {
 }
 
 class Scrolling extends Gatherer {
+  beforePass(options) {
+    return options.driver.goOnline(options);
+  }
+
   pass(options) {
     const driver = options.driver;
     const scrollDistance = options.config.scrollDistance ? options.config.scrollDistance : 10000;

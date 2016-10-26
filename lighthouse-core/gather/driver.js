@@ -476,6 +476,10 @@ class Driver {
    */
   goOnline(options) {
     return this.sendCommand('Network.enable').then(_ => {
+      if (options.config.Network2G) {
+        return emulation.enableNetworkThrottling2G(this);
+      }
+
       if (options.flags.mobile) {
         return emulation.enableNetworkThrottling(this);
       }

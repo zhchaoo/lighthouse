@@ -41,6 +41,13 @@ const NEXUS5X_USERAGENT = {
     '(KHTML, like Gecko) Chrome/52.0.2743.8 Mobile Safari/537.36'
 };
 
+const GOOD_2G_THROTTLING_METRICS = {
+  latency: 150, // 150ms
+  downloadThroughput: 450 * 1024 / 8, // 450Kbps
+  uploadThroughput: 150 * 1024 / 8, // 150Kbps
+  offline: false
+};
+
 const TYPICAL_MOBILE_THROTTLING_METRICS = {
   latency: 150, // 150ms
   downloadThroughput: 1.6 * 1024 * 1024 / 8, // 1.6Mbps
@@ -101,6 +108,10 @@ function enableNexus5X(driver) {
   ]);
 }
 
+function enableNetworkThrottling2G(driver) {
+  return driver.sendCommand('Network.emulateNetworkConditions', GOOD_2G_THROTTLING_METRICS);
+}
+
 function enableNetworkThrottling(driver) {
   return driver.sendCommand('Network.emulateNetworkConditions', TYPICAL_MOBILE_THROTTLING_METRICS);
 }
@@ -115,6 +126,7 @@ function goOffline(driver) {
 
 module.exports = {
   enableNexus5X,
+  enableNetworkThrottling2G,
   enableNetworkThrottling,
   disableNetworkThrottling,
   goOffline
